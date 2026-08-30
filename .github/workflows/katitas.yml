@@ -2,8 +2,8 @@ name: Check Katitas property count
 
 on:
   schedule:
-    # 17:30 JST = 08:30 UTC. Run before the 18:00 notification.
-    - cron: "30 8 * * *"
+    # 17:00 JST = 08:00 UTC. Run before the 17:30 notification.
+    - cron: "0 8 * * *"
   workflow_dispatch:
 
 jobs:
