@@ -14,12 +14,19 @@ def extract_count(text: str) -> str | None:
     if not candidates:
         return None
 
-    # 公開物件数として現実的な4〜6桁を優先
     for value in candidates:
         n = int(value.replace(",", ""))
         if 1000 <= n <= 999999:
             return f"{n:,}"
     return None
+
+
+def safe_screenshot(page, path: Path) -> None:
+    """Screenshots are diagnostics only and must never fail the count check."""
+    try:
+        page.screenshot(path=str(path), full_page=True, timeout=8_000)
+    except Exception as e:
+        print(f"screenshot skipped ({path.name}): {e}", file=sys.stderr)
 
 
 def main() -> int:
@@ -45,9 +52,8 @@ def main() -> int:
         try:
             page.goto(URL, wait_until="domcontentloaded", timeout=60_000)
             page.wait_for_timeout(8_000)
-            page.screenshot(path=str(out / "katitas.png"), full_page=True)
 
-            # 1) iframe の DOM を最優先
+            # 1) iframe の DOM を最優先。スクリーンショットより先に値を取得する。
             for frame in page.frames:
                 if IFRAME_PATTERN.search(frame.url):
                     try:
@@ -56,9 +62,13 @@ def main() -> int:
                         count = extract_count(text)
                         if count:
                             print(f"公開物件数: {count}件")
+                            safe_screenshot(page, out / "katitas.png")
                             return 0
                     except Exception as e:
                         print(f"iframe DOM read failed: {e}", file=sys.stderr)
+
+            # 診断用。失敗しても処理は継続する。
+            safe_screenshot(page, out / "katitas.png")
 
             # 2) iframe URL をブラウザの同一コンテキストで直接開く
             iframe_page = context.new_page()
@@ -70,10 +80,10 @@ def main() -> int:
                     referer=URL,
                 )
                 iframe_page.wait_for_timeout(3_000)
-                iframe_page.screenshot(path=str(out / "properties_number.png"), full_page=True)
                 text = iframe_page.locator("body").inner_text(timeout=10_000)
                 (out / "properties_number.txt").write_text(text, encoding="utf-8")
                 count = extract_count(text)
+                safe_screenshot(iframe_page, out / "properties_number.png")
                 if count:
                     print(f"公開物件数: {count}件")
                     return 0
@@ -90,7 +100,7 @@ def main() -> int:
                 print(f"公開物件数: {count}件")
                 return 0
 
-            print("公開物件数を取得できませんでした。スクリーンショットを artifacts に保存しました。", file=sys.stderr)
+            print("公開物件数を取得できませんでした。診断情報を artifacts に保存しました。", file=sys.stderr)
             return 1
         finally:
             browser.close()
