@@ -6,6 +6,8 @@ on:
       - master
     paths:
       - ".github/workflows/katitas.yml"
+      - "katitas.py"
+      - "requirements.txt"
   schedule:
     # Redundant schedules before the 17:30 JST notification.
     # 16:15 / 16:30 / 16:45 JST = 07:15 / 07:30 / 07:45 UTC.
