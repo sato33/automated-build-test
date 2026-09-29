@@ -9,8 +9,8 @@ on:
       - "katitas.py"
       - "requirements.txt"
   schedule:
-    # 12:00 JST = 03:00 UTC. Run well before the 17:30 notification.
-    - cron: "0 3 * * *"
+    # 06:00 JST = 21:00 UTC (previous day). Leave a large buffer before the 17:30 notification.
+    - cron: "0 21 * * *"
   workflow_dispatch:
 
 concurrency:
